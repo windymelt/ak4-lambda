@@ -17,7 +17,6 @@ import sttp.tapir.DecodeResult
 import sttp.tapir.DecodeResult.Value
 import sttp.tapir.client.http4s.Http4sClientInterpreter
 
-import java.{util => ju}
 import scala.concurrent.ExecutionContext.global
 
 object Main
