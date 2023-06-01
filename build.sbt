@@ -23,3 +23,8 @@ lazy val root = project
       "org.apache.logging.log4j" % "log4j-api" % "2.17.1"
     )
   )
+
+ThisBuild / assemblyMergeStrategy := {
+  case PathList("META-INF", xs @ _*) => MergeStrategy.discard
+  case x                             => MergeStrategy.first
+}
