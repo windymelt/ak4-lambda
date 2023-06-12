@@ -21,6 +21,7 @@ object Ak4 {
       .in(path[String] / "stamps")
       .in(jsonBody[StampInput])
       .out(jsonBody[StampOutput])
+      .errorOut(jsonBody[ErrorOutput])
 
   enum StampType(val code: Long) {
     case 出勤 extends StampType(11)
@@ -49,6 +50,11 @@ object Ak4 {
       success: Boolean,
       response: StampResponse,
       errors: Option[Seq[ErrorResponse]]
+  )
+
+  case class ErrorOutput(
+      success: Boolean,
+      errors: Seq[ErrorResponse]
   )
 
   case class StampResponse(

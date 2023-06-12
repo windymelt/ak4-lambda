@@ -1,5 +1,6 @@
 val scala3Version = "3.2.0"
 val http4sVersion = "0.23.19"
+val circeVersion = "0.14.1"
 
 lazy val root = project
   .in(file("."))
@@ -21,7 +22,12 @@ lazy val root = project
       "com.amazonaws" % "aws-lambda-java-log4j2" % "1.5.1",
       "org.apache.logging.log4j" % "log4j-core" % "2.17.1",
       "org.apache.logging.log4j" % "log4j-api" % "2.17.1"
-    )
+    ),
+    libraryDependencies ++= Seq(
+      "io.circe" %% "circe-core",
+      "io.circe" %% "circe-generic",
+      "io.circe" %% "circe-parser"
+    ).map(_ % circeVersion)
   )
 
 ThisBuild / assemblyMergeStrategy := {
