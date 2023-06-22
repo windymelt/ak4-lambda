@@ -8,6 +8,7 @@ import com.github.nscala_time.time.Implicits._
 import com.github.windymelt.ak4lambda.endpoint.Ak4.ErrorOutput
 import com.github.windymelt.ak4lambda.endpoint.Ak4.ErrorResponse
 import com.github.windymelt.ak4lambda.endpoint.Ak4.StampOutput
+import com.github.windymelt.ak4lambda.endpoint.Ak4.StampType
 import com.monovore.decline._
 import com.monovore.decline.effect._
 import org.http4s.client._
@@ -93,7 +94,13 @@ object Lambda {
             result match {
               case Right(out) if out.success =>
                 logger.info(s"punch successful: ${stampType.toString()}")
-                output.write("ok".getBytes())
+                stampType match {
+                  case StampType.出勤 =>
+                    output.write("""{"status":"in"}""".getBytes())
+                  case StampType.退勤 =>
+                    output.write("""{"status":"out"}""".getBytes())
+                  case _ => // nop
+                }
               case Left(err) => {
                 logger.error(s"punch failed:")
                 logger.error(
