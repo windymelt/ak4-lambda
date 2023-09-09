@@ -17,7 +17,7 @@ lazy val root = project
       "com.monovore" %% "decline" % "2.4.1",
       "com.monovore" %% "decline-effect" % "2.4.1",
       "com.github.nscala-time" %% "nscala-time" % "2.32.0",
-      "com.amazonaws" % "aws-lambda-java-core" % "1.2.2",
+      "com.amazonaws" % "aws-lambda-java-core" % "1.2.3",
       "com.amazonaws" % "aws-lambda-java-events" % "3.11.2",
       "com.amazonaws" % "aws-lambda-java-log4j2" % "1.5.1",
       "org.apache.logging.log4j" % "log4j-core" % "2.17.1",
