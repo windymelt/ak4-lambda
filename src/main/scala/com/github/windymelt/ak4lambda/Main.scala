@@ -56,7 +56,7 @@ object Lambda {
   import cats.effect.unsafe.implicits._
   import reflect.Selectable.reflectiveSelectable
   import io.circe._, io.circe.generic.auto._, io.circe.parser._,
-  io.circe.syntax._
+    io.circe.syntax._
   import scala.io.Source
 
   case class ButtonClicked(val clickType: String, val reportedTime: String)
