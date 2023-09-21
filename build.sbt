@@ -1,6 +1,6 @@
 val scala3Version = "3.3.0"
-val http4sVersion = "0.23.19"
-val circeVersion = "0.14.1"
+val http4sVersion = "0.23.23"
+val circeVersion = "0.14.6"
 
 lazy val root = project
   .in(file("."))
@@ -17,11 +17,11 @@ lazy val root = project
       "com.monovore" %% "decline" % "2.4.1",
       "com.monovore" %% "decline-effect" % "2.4.1",
       "com.github.nscala-time" %% "nscala-time" % "2.32.0",
-      "com.amazonaws" % "aws-lambda-java-core" % "1.2.2",
+      "com.amazonaws" % "aws-lambda-java-core" % "1.2.3",
       "com.amazonaws" % "aws-lambda-java-events" % "3.11.2",
       "com.amazonaws" % "aws-lambda-java-log4j2" % "1.5.1",
-      "org.apache.logging.log4j" % "log4j-core" % "2.17.1",
-      "org.apache.logging.log4j" % "log4j-api" % "2.17.1"
+      "org.apache.logging.log4j" % "log4j-core" % "2.20.0",
+      "org.apache.logging.log4j" % "log4j-api" % "2.20.0"
     ),
     libraryDependencies ++= Seq(
       "io.circe" %% "circe-core",
