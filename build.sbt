@@ -1,5 +1,5 @@
 val scala3Version = "3.3.1"
-val http4sVersion = "0.23.23"
+val http4sVersion = "0.23.24"
 val circeVersion = "0.14.6"
 
 lazy val root = project
