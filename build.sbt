@@ -10,9 +10,9 @@ lazy val root = project
     scalaVersion := scala3Version,
     libraryDependencies += "org.scalameta" %% "munit" % "0.7.29" % Test,
     libraryDependencies ++= Seq(
-      "com.softwaremill.sttp.tapir" %% "tapir-core" % "1.4.0",
-      "com.softwaremill.sttp.tapir" %% "tapir-http4s-client" % "1.4.0",
-      "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % "1.4.0",
+      "com.softwaremill.sttp.tapir" %% "tapir-core" % "1.9.3",
+      "com.softwaremill.sttp.tapir" %% "tapir-http4s-client" % "1.9.3",
+      "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % "1.9.3",
       "org.http4s" %% "http4s-ember-client" % http4sVersion,
       "com.monovore" %% "decline" % "2.4.1",
       "com.monovore" %% "decline-effect" % "2.4.1",
