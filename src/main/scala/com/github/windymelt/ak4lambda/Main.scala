@@ -74,57 +74,40 @@ object Lambda {
       output: OutputStream,
       context: Context
   ): Unit =
-    cmd.parse(Seq(), sys.env) match {
-      case Right((envToken, coop, secretArn)) =>
-        val jsonString = Source.fromInputStream(input).mkString
-        val event = decode[OneClickEvent](jsonString)
-        event match {
-          case Left(msg) =>
-            println(msg.toString())
-            msg.toString()
-          case Right(event) =>
-            val clickType = event.deviceEvent.buttonClicked.clickType
-            val stampType = clickType match {
-              case "SINGLE" => endpoint.Ak4.StampType.出勤
-              case "DOUBLE" => endpoint.Ak4.StampType.退勤
-              case "LONG"   => endpoint.Ak4.StampType.退勤
-            }
-            val token =
-              envToken.getOrElse(Secret.currentToken(secretArn).unsafeRunSync())
-            val result = punch(stampType, coop, token.toString).unsafeRunSync()
-            result match {
-              case Right(out) if out.success =>
-                logger.info(s"punch successful: ${stampType.toString()}")
-                stampType match {
-                  case StampType.出勤 =>
-                    output.write("""{"status":"in"}""".getBytes())
-                    // renew token every morning
-                    val newToken =
-                      renewToken(coop, token.toString).unsafeRunSync()
-                    newToken.foreach: t =>
-                      Secret
-                        .updateCurrentToken(secretArn, t.response.token)
-                        .unsafeRunSync()
-                  case StampType.退勤 =>
-                    output.write("""{"status":"out"}""".getBytes())
-                  case _ => // nop
-                }
-              case Left(err) => {
-                logger.error(s"punch failed:")
-                logger.error(
-                  err.errors.map(e => s"${e.code}: ${e.message}").mkString("\n")
-                )
-                output.write("fail".getBytes())
-              }
-              case otherwise =>
-                logger.error("punch failed")
-                output.write("fail".getBytes())
-            }
-        }
-      case Left(h) =>
-        logger.error(h.toString)
+    val punchResult = for
+      tuple <- cmd.parse(Seq(), sys.env)
+      (envToken, coop, secretArn) = tuple
+      event <- decode[OneClickEvent](Source.fromInputStream(input).mkString)
+      clickType = event.deviceEvent.buttonClicked.clickType
+      stampType = clickType match
+        case "SINGLE" => endpoint.Ak4.StampType.出勤
+        case "DOUBLE" => endpoint.Ak4.StampType.退勤
+        case "LONG"   => endpoint.Ak4.StampType.退勤
+      token = envToken.getOrElse(Secret.currentToken(secretArn).unsafeRunSync())
+      result <- punch(stampType, coop, token.toString)
+        .unsafeRunSync()
+        .filterOrElse(_.success, "Punch failed")
+      _ = stampType match
+        case endpoint.Ak4.StampType.出勤 =>
+          output.write("""{"status":"in"}""".getBytes())
+          // renew token every morning
+          val newToken =
+            renewToken(coop, token.toString).unsafeRunSync()
+          newToken.foreach: t =>
+            Secret
+              .updateCurrentToken(secretArn, t.response.token)
+              .unsafeRunSync()
+        case endpoint.Ak4.StampType.退勤 =>
+          output.write("""{"status":"out"}""".getBytes())
+        case _ => // nop
+    yield result
+    punchResult match
+      case Left(e) =>
+        logger.error(s"punch failed:")
+        logger.error(e.toString)
         output.write("fail".getBytes())
-    }
+      case Right(_) => // nop
+
     input.close()
     output.flush()
     output.close()
