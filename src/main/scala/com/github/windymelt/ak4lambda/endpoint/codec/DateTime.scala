@@ -10,24 +10,19 @@ object DateTime:
   import org.joda.time.DateTime
   val JST = +9
 
-  given Encoder[DateTime] = new Encoder[DateTime] {
-    final def apply(dt: DateTime): Json =
-      Json.fromString(
-        dt.withZone(DateTimeZone.forOffsetHours(JST))
-          .toString("""yyyy/MM/dd HH:mm:ss""")
-      )
-  }
+  given Encoder[DateTime] = (dt: DateTime) =>
+    Json.fromString(
+      dt.withZone(DateTimeZone.forOffsetHours(JST))
+        .toString("""yyyy/MM/dd HH:mm:ss""")
+    )
 
-  given Decoder[DateTime] = new Decoder[DateTime] {
-    final def apply(s: HCursor): Decoder.Result[DateTime] = {
-      val fmt = DateTimeFormat.forPattern("""yyyy/MM/dd HH:mm:ss""")
-      for
-        dtString <- s.focus
-          .flatMap(_.asString)
-          .toRight(DecodingFailure("Could not parse as string", s.history))
-        dt <- (allCatch either {
-          org.joda.time.DateTime.parse(dtString, fmt)
-        }).left.map(e => DecodingFailure(e.getMessage, s.history))
-      yield dt
-    }
-  }
+  given Decoder[DateTime] = (s: HCursor) =>
+    val fmt = DateTimeFormat.forPattern("""yyyy/MM/dd HH:mm:ss""")
+    for
+      dtString <- s.focus
+        .flatMap(_.asString)
+        .toRight(DecodingFailure("Could not parse as string", s.history))
+      dt <- (allCatch either {
+        org.joda.time.DateTime.parse(dtString, fmt)
+      }).left.map(e => DecodingFailure(e.getMessage, s.history))
+    yield dt
