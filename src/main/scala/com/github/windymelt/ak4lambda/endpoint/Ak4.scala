@@ -4,9 +4,7 @@ import com.github.nscala_time.time.Imports._
 import com.github.windymelt.ak4lambda.endpoint.codec.DateTime.{*, given}
 import io.circe.Decoder
 import io.circe.Encoder
-import io.circe.Json
 import io.circe.generic.auto._
-import sttp.tapir.SchemaType.SString
 import sttp.tapir._
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe._
