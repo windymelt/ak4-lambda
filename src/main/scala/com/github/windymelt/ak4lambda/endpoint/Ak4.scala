@@ -1,7 +1,7 @@
 package com.github.windymelt.ak4lambda.endpoint
 
 import com.github.nscala_time.time.Imports._
-import com.github.windymelt.ak4lambda.endpoint.codec.DateTime._
+import com.github.windymelt.ak4lambda.endpoint.codec.DateTime.{*, given}
 import io.circe.Decoder
 import io.circe.Encoder
 import io.circe.Json

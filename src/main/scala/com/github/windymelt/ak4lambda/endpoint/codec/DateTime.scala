@@ -10,7 +10,7 @@ object DateTime {
   import org.joda.time.DateTime
   val JST = +9
 
-  implicit val encodeDateTime: Encoder[DateTime] = new Encoder[DateTime] {
+  given Encoder[DateTime] = new Encoder[DateTime] {
     final def apply(dt: DateTime): Json =
       Json.fromString(
         dt.withZone(DateTimeZone.forOffsetHours(JST))
@@ -18,7 +18,7 @@ object DateTime {
       )
   }
 
-  implicit val decodeDateTime: Decoder[DateTime] = new Decoder[DateTime] {
+  given Decoder[DateTime] = new Decoder[DateTime] {
     final def apply(s: HCursor): Decoder.Result[DateTime] = {
       val fmt = DateTimeFormat.forPattern("""yyyy/MM/dd HH:mm:ss""")
       for
