@@ -107,7 +107,6 @@ object Lambda {
         logger.error(e.toString)
         output.write("fail".getBytes())
       case Right(_) => // nop
-
     input.close()
     output.flush()
     output.close()
@@ -138,22 +137,7 @@ def punch(
   val parsedResult: IO[DecodeResult[Either[ErrorOutput, StampOutput]]] =
     clientResource.flatMap(_.run(punchRequest)).use(parseResponse)
 
-  for {
-    pr <- parsedResult
-    v <- pr match {
-      case Value(Right(v)) => IO(Right(v))
-      case Value(Left(e))  => IO(Left(e))
-      case otherwise =>
-        IO(
-          Left(
-            ErrorOutput(
-              false,
-              Seq(ErrorResponse("CLIENT_FAILED", "decode failed"))
-            )
-          )
-        )
-    }
-  } yield v
+  extractDecodeResult(parsedResult)
 }
 
 def renewToken(
@@ -176,20 +160,17 @@ def renewToken(
   val parsedResult: IO[DecodeResult[Either[ErrorOutput, ReissueTokenOutput]]] =
     clientResource.flatMap(_.run(reissueRequest)).use(parseResponse)
 
-  for {
-    pr <- parsedResult
-    v <- pr match {
-      case Value(Right(v)) => IO(Right(v))
-      case Value(Left(e))  => IO(Left(e))
-      case otherwise =>
-        IO.println(otherwise) >> IO(
-          Left(
-            ErrorOutput(
-              false,
-              Seq(ErrorResponse("CLIENT_FAILED", "decode failed"))
-            )
-          )
-        )
-    }
-  } yield v
+  extractDecodeResult(parsedResult)
 }
+
+def extractDecodeResult[A](
+    io: IO[DecodeResult[Either[ErrorOutput, A]]]
+): IO[Either[ErrorOutput, A]] =
+  for
+    pr <- io
+    v <- pr match
+      case Value(either) => IO(either)
+      case otherwise =>
+        val err = Seq(ErrorResponse("CLIENT_FAILED", "decode failed"))
+        IO.println(otherwise) >> Left(ErrorOutput(false, err)).pure
+  yield v
