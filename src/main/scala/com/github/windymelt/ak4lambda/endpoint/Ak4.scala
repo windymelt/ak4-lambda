@@ -23,6 +23,13 @@ object Ak4 {
       .out(jsonBody[StampOutput])
       .errorOut(jsonBody[ErrorOutput])
 
+  lazy val reissueToken =
+    base.post
+      .in("token" / "reissue" / path[String])
+      .in(jsonBody[ReissueTokenInput])
+      .out(jsonBody[ReissueTokenOutput])
+      .errorOut(jsonBody[ErrorOutput])
+
   enum StampType(val code: Long) {
     case 出勤 extends StampType(11)
     case 退勤 extends StampType(12)
@@ -50,6 +57,24 @@ object Ak4 {
       success: Boolean,
       response: StampResponse,
       errors: Option[Seq[ErrorResponse]]
+  )
+
+  case class ReissueTokenInput(
+      token: String
+  )
+
+  case class ReissueTokenOutput(
+      success: Boolean,
+      response: ReissueTokenResponse,
+      errors: Option[Seq[ErrorResponse]]
+  )
+
+  case class ReissueTokenResponse(
+      loginCompanyCode: String,
+      staffId: Int,
+      agencyManagerId: Int,
+      token: String,
+      expiredAt: DateTime
   )
 
   case class ErrorOutput(
