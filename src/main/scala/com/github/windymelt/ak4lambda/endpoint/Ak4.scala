@@ -1,17 +1,15 @@
 package com.github.windymelt.ak4lambda.endpoint
 
 import com.github.nscala_time.time.Imports._
-import com.github.windymelt.ak4lambda.endpoint.codec.DateTime._
+import com.github.windymelt.ak4lambda.endpoint.codec.DateTime.{*, given}
 import io.circe.Decoder
 import io.circe.Encoder
-import io.circe.Json
 import io.circe.generic.auto._
-import sttp.tapir.SchemaType.SString
 import sttp.tapir._
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe._
 
-object Ak4 {
+object Ak4:
   private val authInput: EndpointInput[String] = query[String]("token")
   private lazy val base =
     endpoint.securityIn(authInput).in("api" / "cooperation")
@@ -21,6 +19,13 @@ object Ak4 {
       .in(path[String] / "stamps")
       .in(jsonBody[StampInput])
       .out(jsonBody[StampOutput])
+      .errorOut(jsonBody[ErrorOutput])
+
+  lazy val reissueToken =
+    base.post
+      .in("token" / "reissue" / path[String])
+      .in(jsonBody[ReissueTokenInput])
+      .out(jsonBody[ReissueTokenOutput])
       .errorOut(jsonBody[ErrorOutput])
 
   enum StampType(val code: Long) {
@@ -52,6 +57,24 @@ object Ak4 {
       errors: Option[Seq[ErrorResponse]]
   )
 
+  case class ReissueTokenInput(
+      token: String
+  )
+
+  case class ReissueTokenOutput(
+      success: Boolean,
+      response: ReissueTokenResponse,
+      errors: Option[Seq[ErrorResponse]]
+  )
+
+  case class ReissueTokenResponse(
+      login_company_code: String,
+      staff_id: Long,
+      agency_manager_id: Option[Long],
+      token: String,
+      expired_at: DateTime
+  )
+
   case class ErrorOutput(
       success: Boolean,
       errors: Seq[ErrorResponse]
@@ -64,4 +87,3 @@ object Ak4 {
       stampedAt: String
   )
   case class ErrorResponse(code: String, message: String)
-}
