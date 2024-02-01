@@ -1,6 +1,5 @@
 package com.github.windymelt.ak4lambda
 
-import cats.effect.IO
 import cats.effect.*
 import cats.implicits.*
 import com.github.windymelt.ak4lambda.endpoint.Ak4.{
@@ -19,8 +18,7 @@ import sttp.tapir.DecodeResult
 import sttp.tapir.DecodeResult.Value
 import sttp.tapir.client.http4s.Http4sClientInterpreter
 
-import java.io.InputStream
-import java.io.OutputStream
+import java.io.{InputStream, OutputStream}
 
 object Main
     extends CommandIOApp(
@@ -49,13 +47,13 @@ object Main
 }
 
 object Lambda {
+  import cats.effect.unsafe.implicits.*
   import com.amazonaws.services.lambda.runtime.Context
+  import io.circe.*
+  import io.circe.generic.auto.*
+  import io.circe.parser.decode
   import org.apache.logging.log4j.LogManager
-  import org.apache.logging.log4j.Logger
-  import cats.effect.unsafe.implicits._
-  import reflect.Selectable.reflectiveSelectable
-  import io.circe._, io.circe.generic.auto._, io.circe.parser._,
-    io.circe.syntax._
+
   import scala.io.Source
 
   case class ButtonClicked(val clickType: String, val reportedTime: String)
