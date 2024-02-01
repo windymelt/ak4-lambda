@@ -70,11 +70,11 @@ object Ak4 {
   )
 
   case class ReissueTokenResponse(
-      loginCompanyCode: String,
-      staffId: Int,
-      agencyManagerId: Int,
+      login_company_code: String,
+      staff_id: Long,
+      agency_manager_id: Option[Long],
       token: String,
-      expiredAt: DateTime
+      expired_at: DateTime
   )
 
   case class ErrorOutput(
