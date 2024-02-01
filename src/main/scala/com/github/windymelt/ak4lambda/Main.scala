@@ -17,7 +17,6 @@ import org.joda.time.DateTime
 import sttp.tapir.DecodeResult
 import sttp.tapir.DecodeResult.Value
 import sttp.tapir.client.http4s.Http4sClientInterpreter
-
 import java.io.{InputStream, OutputStream}
 
 object Main
@@ -26,34 +25,29 @@ object Main
       "Punch ak4 system",
       helpFlag = true,
       version = "0.0.1"
-    ) {
-
+    ):
   // CLI用エンドポイント
-  override def main = (CLI.tokenEnvOpt, CLI.punchTypeOpt, CLI.coopIdOpt) mapN {
+  override def main = (CLI.tokenEnvOpt, CLI.punchTypeOpt, CLI.coopIdOpt) mapN:
     (token, punchType, coop) =>
-      {
-        val punchTypeEnum = punchType match {
-          case Some("on")  => endpoint.Ak4.StampType.出勤
-          case Some("off") => endpoint.Ak4.StampType.退勤
-          case Some(_)     => ???
-          case None => throw new RuntimeException("CLIから呼び出すときは打刻種別が必要です")
-        }
-
-        punch(punchTypeEnum, coop, token.toString).debug(
-          "result: "
-        ) >> ExitCode.Success.pure
+      val punchTypeEnum = punchType match {
+        case Some("on")  => endpoint.Ak4.StampType.出勤
+        case Some("off") => endpoint.Ak4.StampType.退勤
+        case Some(_)     => ???
+        case None        => throw new RuntimeException("CLIから呼び出すときは打刻種別が必要です")
       }
-  }
-}
 
-object Lambda {
+      punch(punchTypeEnum, coop, token.toString).debug(
+        "result: "
+      ) >> ExitCode.Success.pure
+end Main
+
+object Lambda:
   import cats.effect.unsafe.implicits.*
   import com.amazonaws.services.lambda.runtime.Context
   import io.circe.*
   import io.circe.generic.auto.*
   import io.circe.parser.decode
   import org.apache.logging.log4j.LogManager
-
   import scala.io.Source
 
   case class ButtonClicked(val clickType: String, val reportedTime: String)
@@ -108,13 +102,13 @@ object Lambda {
     input.close()
     output.flush()
     output.close()
-}
+end Lambda
 
 def punch(
     punchType: endpoint.Ak4.StampType,
     coop: String,
     token: String
-): IO[Either[ErrorOutput, StampOutput]] = {
+): IO[Either[ErrorOutput, StampOutput]] =
   val (punchRequest, parseResponse) =
     Http4sClientInterpreter[IO]()
       .toSecureRequest(
@@ -136,12 +130,11 @@ def punch(
     clientResource.flatMap(_.run(punchRequest)).use(parseResponse)
 
   extractDecodeResult(parsedResult)
-}
 
 def renewToken(
     coop: String,
     token: String
-): IO[Either[ErrorOutput, ReissueTokenOutput]] = {
+): IO[Either[ErrorOutput, ReissueTokenOutput]] =
   val (reissueRequest, parseResponse) =
     Http4sClientInterpreter[IO]()
       .toSecureRequest(
@@ -159,7 +152,6 @@ def renewToken(
     clientResource.flatMap(_.run(reissueRequest)).use(parseResponse)
 
   extractDecodeResult(parsedResult)
-}
 
 def extractDecodeResult[A](
     io: IO[DecodeResult[Either[ErrorOutput, A]]]

@@ -9,7 +9,7 @@ import sttp.tapir._
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe._
 
-object Ak4 {
+object Ak4:
   private val authInput: EndpointInput[String] = query[String]("token")
   private lazy val base =
     endpoint.securityIn(authInput).in("api" / "cooperation")
@@ -87,4 +87,3 @@ object Ak4 {
       stampedAt: String
   )
   case class ErrorResponse(code: String, message: String)
-}

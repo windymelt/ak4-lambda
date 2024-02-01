@@ -1,11 +1,10 @@
 package com.github.windymelt.ak4lambda
 
-import cats.implicits._
-import com.monovore.decline._
+import com.monovore.decline.*
 
 import java.util.UUID
 
-object CLI {
+object CLI:
   val tokenEnvOpt = Opts
     .env[UUID](
       "AK4_TOKEN",
@@ -29,4 +28,3 @@ object CLI {
     metavar =
       "arn:aws:secretsmanager:ap-northeast-1:66666666:secret:secret/token-123456"
   )
-}

@@ -6,7 +6,7 @@ import org.joda.time.DateTimeZone
 import org.joda.time.format.{DateTimeFormat, DateTimeFormatter}
 import scala.util.control.Exception.allCatch
 
-object DateTime {
+object DateTime:
   import org.joda.time.DateTime
   val JST = +9
 
@@ -31,4 +31,3 @@ object DateTime {
       yield dt
     }
   }
-}
