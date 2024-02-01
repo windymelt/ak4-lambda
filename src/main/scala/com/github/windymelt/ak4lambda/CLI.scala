@@ -5,7 +5,7 @@ import com.monovore.decline.*
 import java.util.UUID
 
 object CLI:
-  val tokenEnvOpt = Opts
+  val tokenEnvOpt: Opts[Option[UUID]] = Opts
     .env[UUID](
       "AK4_TOKEN",
       help =
@@ -13,16 +13,16 @@ object CLI:
       metavar = "xxxxxxxx-yyyy-zzzz-aaaa-bbbbbbbbbbbb"
     )
     .orNone
-  val coopIdOpt = Opts.env[String](
+  val coopIdOpt: Opts[String] = Opts.env[String](
     "AK4_COOP_ID",
-    help = "Ak4 cooporate ID",
+    help = "Ak4 cooperate ID",
     metavar = "company1234"
   )
-  val punchTypeOpt = Opts
+  val punchTypeOpt: Opts[Option[String]] = Opts
     .argument[String]("on | off")
     .validate("punch type should be one of on | off")(Seq("on", "off").contains)
     .orNone
-  val secretArnOpt = Opts.env[String](
+  val secretArnOpt: Opts[String] = Opts.env[String](
     "AWS_SECRET_ARN",
     help = "AWS Secret Manager Secret ARN",
     metavar =

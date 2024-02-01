@@ -16,9 +16,9 @@ object Lambda:
   case class DeviceEvent(val buttonClicked: ButtonClicked)
   case class OneClickEvent(val deviceEvent: DeviceEvent)
 
-  val logger = LogManager.getLogger(this.getClass())
+  private val logger = LogManager.getLogger(this.getClass())
 
-  val cmd = Command("ak4", "Punch ak4 system", false)(
+  private val cmd = Command("ak4", "Punch ak4 system", false)(
     (CLI.tokenEnvOpt, CLI.coopIdOpt, CLI.secretArnOpt).tupled
   )
 
