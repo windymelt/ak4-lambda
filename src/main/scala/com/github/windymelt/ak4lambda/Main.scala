@@ -1,19 +1,19 @@
 package com.github.windymelt.ak4lambda
 
 import cats.effect.IO
-import cats.effect.IOApp
-import cats.effect._
-import cats.implicits._
-import com.github.nscala_time.time.Implicits._
-import com.github.windymelt.ak4lambda.endpoint.Ak4.ErrorOutput
-import com.github.windymelt.ak4lambda.endpoint.Ak4.ErrorResponse
-import com.github.windymelt.ak4lambda.endpoint.Ak4.StampOutput
-import com.github.windymelt.ak4lambda.endpoint.Ak4.StampType
-import com.monovore.decline._
-import com.monovore.decline.effect._
-import org.http4s.client._
+import cats.effect.*
+import cats.implicits.*
+import com.github.windymelt.ak4lambda.endpoint.Ak4.{
+  ErrorOutput,
+  ErrorResponse,
+  ReissueTokenOutput,
+  StampOutput,
+  StampType
+}
+import com.monovore.decline.*
+import com.monovore.decline.effect.*
 import org.http4s.ember.client.EmberClientBuilder
-import org.http4s.implicits._
+import org.http4s.implicits.*
 import org.joda.time.DateTime
 import sttp.tapir.DecodeResult
 import sttp.tapir.DecodeResult.Value
@@ -21,7 +21,6 @@ import sttp.tapir.client.http4s.Http4sClientInterpreter
 
 import java.io.InputStream
 import java.io.OutputStream
-import scala.concurrent.ExecutionContext.global
 
 object Main
     extends CommandIOApp(
@@ -66,7 +65,7 @@ object Lambda {
   val logger = LogManager.getLogger(this.getClass())
 
   val cmd = Command("ak4", "Punch ak4 system", false)(
-    (CLI.tokenEnvOpt, CLI.coopIdOpt).tupled
+    (CLI.tokenEnvOpt, CLI.coopIdOpt, CLI.secretArnOpt).tupled
   )
 
   // AWS Lambda用エンドポイント
@@ -76,7 +75,7 @@ object Lambda {
       context: Context
   ): Unit =
     cmd.parse(Seq(), sys.env) match {
-      case Right((token, coop)) =>
+      case Right((envToken, coop, secretArn)) =>
         val jsonString = Source.fromInputStream(input).mkString
         val event = decode[OneClickEvent](jsonString)
         event match {
@@ -90,6 +89,8 @@ object Lambda {
               case "DOUBLE" => endpoint.Ak4.StampType.退勤
               case "LONG"   => endpoint.Ak4.StampType.退勤
             }
+            val token =
+              envToken.getOrElse(Secret.currentToken(secretArn).unsafeRunSync())
             val result = punch(stampType, coop, token.toString).unsafeRunSync()
             result match {
               case Right(out) if out.success =>
@@ -97,6 +98,13 @@ object Lambda {
                 stampType match {
                   case StampType.出勤 =>
                     output.write("""{"status":"in"}""".getBytes())
+                    // renew token every morning
+                    val newToken =
+                      renewToken(coop, token.toString).unsafeRunSync()
+                    newToken.foreach: t =>
+                      Secret
+                        .updateCurrentToken(secretArn, t.response.token)
+                        .unsafeRunSync()
                   case StampType.退勤 =>
                     output.write("""{"status":"out"}""".getBytes())
                   case _ => // nop
@@ -154,6 +162,44 @@ def punch(
       case Value(Left(e))  => IO(Left(e))
       case otherwise =>
         IO(
+          Left(
+            ErrorOutput(
+              false,
+              Seq(ErrorResponse("CLIENT_FAILED", "decode failed"))
+            )
+          )
+        )
+    }
+  } yield v
+}
+
+def renewToken(
+    coop: String,
+    token: String
+): IO[Either[ErrorOutput, ReissueTokenOutput]] = {
+  val (reissueRequest, parseResponse) =
+    Http4sClientInterpreter[IO]()
+      .toSecureRequest(
+        endpoint.Ak4.reissueToken,
+        baseUri = Some(uri"https://atnd.ak4.jp/")
+      )
+      .apply(token)(
+        coop,
+        endpoint.Ak4.ReissueTokenInput(token)
+      )
+
+  val clientResource = EmberClientBuilder.default[IO].build
+
+  val parsedResult: IO[DecodeResult[Either[ErrorOutput, ReissueTokenOutput]]] =
+    clientResource.flatMap(_.run(reissueRequest)).use(parseResponse)
+
+  for {
+    pr <- parsedResult
+    v <- pr match {
+      case Value(Right(v)) => IO(Right(v))
+      case Value(Left(e))  => IO(Left(e))
+      case otherwise =>
+        IO.println(otherwise) >> IO(
           Left(
             ErrorOutput(
               false,
