@@ -5,10 +5,9 @@ import com.amazonaws.services.secretsmanager.AWSSecretsManagerClientBuilder
 import com.amazonaws.services.secretsmanager.model.UpdateSecretRequest
 
 object Secret:
-  private val SECRET_ID = ""
   private val cache = new SecretCache()
-  def currentToken: String = cache.getSecretString(SECRET_ID)
-  def updateCurrentToken(token: String): Unit =
+  def currentToken(secretId: String): String = cache.getSecretString(secretId)
+  def updateCurrentToken(secretId: String, token: String): Unit =
     val req =
-      new UpdateSecretRequest().withSecretId(SECRET_ID).withSecretString(token)
+      new UpdateSecretRequest().withSecretId(secretId).withSecretString(token)
     AWSSecretsManagerClientBuilder.defaultClient().updateSecret(req)
