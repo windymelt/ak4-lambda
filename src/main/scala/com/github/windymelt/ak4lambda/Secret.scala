@@ -7,7 +7,7 @@ import com.amazonaws.services.secretsmanager.model.UpdateSecretRequest
 object Secret:
   private val SECRET_ID = ""
   private val cache = new SecretCache()
-  def getCurrentToken(): String = cache.getSecretString(SECRET_ID)
+  def currentToken: String = cache.getSecretString(SECRET_ID)
   def updateCurrentToken(token: String): Unit =
     val req =
       new UpdateSecretRequest().withSecretId(SECRET_ID).withSecretString(token)
