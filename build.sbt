@@ -20,8 +20,8 @@ lazy val root = project
       "com.amazonaws" % "aws-lambda-java-core" % "1.2.3",
       "com.amazonaws" % "aws-lambda-java-events" % "3.11.4",
       "com.amazonaws" % "aws-lambda-java-log4j2" % "1.5.1",
-      "org.apache.logging.log4j" % "log4j-core" % "2.20.0",
-      "org.apache.logging.log4j" % "log4j-api" % "2.20.0",
+      "org.apache.logging.log4j" % "log4j-core" % "2.23.1",
+      "org.apache.logging.log4j" % "log4j-api" % "2.23.1",
       "com.amazonaws.secretsmanager" % "aws-secretsmanager-caching-java" % "1.0.2"
     ),
     libraryDependencies ++= Seq(
