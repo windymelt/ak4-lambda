@@ -11,12 +11,11 @@ import com.github.windymelt.ak4lambda.endpoint.Ak4.{
 }
 import org.http4s.ember.client.EmberClientBuilder
 import org.http4s.implicits.*
-import org.joda.time.DateTime
 import sttp.tapir.DecodeResult
 import sttp.tapir.DecodeResult.Value
 import sttp.tapir.client.http4s.Http4sClientInterpreter
 
-package object ak4lambda:
+package object ak4lambda {
   def punch(
       punchType: endpoint.Ak4.StampType,
       coop: String,
@@ -32,7 +31,7 @@ package object ak4lambda:
           coop,
           endpoint.Ak4.StampInput(
             punchType.code.toInt,
-            DateTime.now(),
+            java.time.OffsetDateTime.now(java.time.ZoneId.of("+9")),
             "+09:00"
           )
         )
@@ -78,3 +77,4 @@ package object ak4lambda:
           val err = Seq(ErrorResponse("CLIENT_FAILED", "decode failed"))
           IO.println(otherwise) >> Left(ErrorOutput(false, err)).pure
     yield v
+}

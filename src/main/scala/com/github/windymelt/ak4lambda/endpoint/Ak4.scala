@@ -1,6 +1,5 @@
 package com.github.windymelt.ak4lambda.endpoint
 
-import com.github.nscala_time.time.Imports._
 import com.github.windymelt.ak4lambda.endpoint.codec.DateTime.{*, given}
 import io.circe.Decoder
 import io.circe.Encoder
@@ -9,7 +8,7 @@ import sttp.tapir._
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe._
 
-object Ak4:
+object Ak4 {
   private val authInput: EndpointInput[String] = query[String]("token")
   private lazy val base =
     endpoint.securityIn(authInput).in("api" / "cooperation")
@@ -39,15 +38,15 @@ object Ak4:
 
   val JST = +9
   // Schemaではどのlow levelな表現に対応するかだけ示せばよい(実際の変換はcirceのcodecが行う)
-  implicit val DTSchema: Schema[org.joda.time.DateTime] =
+  implicit val DTSchema: Schema[java.time.OffsetDateTime] =
     Schema
-      .string[org.joda.time.DateTime]
+      .string[java.time.OffsetDateTime]
 
   type TZString = "+09:00" // we fixed it
   implicit val TZStringSchema: Schema[TZString] = Schema.string[TZString]
   case class StampInput(
       `type`: Int,
-      stampedAt: DateTime,
+      stampedAt: java.time.OffsetDateTime,
       timezone: TZString
   )
 
@@ -72,7 +71,7 @@ object Ak4:
       staff_id: Long,
       agency_manager_id: Option[Long],
       token: String,
-      expired_at: DateTime
+      expired_at: java.time.OffsetDateTime
   )
 
   case class ErrorOutput(
@@ -87,3 +86,4 @@ object Ak4:
       stampedAt: String
   )
   case class ErrorResponse(code: String, message: String)
+}

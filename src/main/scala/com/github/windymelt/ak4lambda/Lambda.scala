@@ -4,25 +4,30 @@ import com.monovore.decline.Command
 import java.io.{InputStream, OutputStream}
 import cats.implicits.*
 import cats.effect.unsafe.implicits.*
-import com.amazonaws.services.lambda.runtime.Context
 import io.circe.*
 import io.circe.generic.auto.*
 import io.circe.parser.decode
-import org.apache.logging.log4j.LogManager
 import scala.io.Source
+import scala.scalajs.js
+import scala.scalajs.js.annotation._
 
-object Lambda:
-  case class ButtonClicked(val clickType: String, val reportedTime: String)
-  case class DeviceEvent(val buttonClicked: ButtonClicked)
-  case class OneClickEvent(val deviceEvent: DeviceEvent)
+object Lambda {
+  @js.native
+  trait ButtonClicked extends js.Object {
+    val clickTypeName: String
+  }
 
-  private val logger = LogManager.getLogger(this.getClass())
+  @js.native
+  trait Context extends js.Object {}
+
+  private val logger = scribe.Logger("Lambda")
 
   private val cmd = Command("ak4", "Punch ak4 system", false)(
     (CLI.tokenEnvOpt, CLI.coopIdOpt, CLI.secretArnOpt).tupled
   )
 
   // AWS Lambda用エンドポイント
+  @JSExportTopLevel(name = "handler", moduleID = "index")
   def handler(
       input: InputStream,
       output: OutputStream,
@@ -31,13 +36,13 @@ object Lambda:
     val punchResult = for
       tuple <- cmd.parse(Seq(), sys.env)
       (envToken, coop, secretArn) = tuple
-      event <- decode[OneClickEvent](Source.fromInputStream(input).mkString)
-      clickType = event.deviceEvent.buttonClicked.clickType
+      event <- decode[ButtonClicked](Source.fromInputStream(input).mkString)
+      clickType = event.clickTypeName
       stampType = clickType match
         case "SINGLE" => endpoint.Ak4.StampType.出勤
         case "DOUBLE" => endpoint.Ak4.StampType.退勤
         case "LONG"   => endpoint.Ak4.StampType.退勤
-      token = envToken.getOrElse(Secret.currentToken(secretArn).unsafeRunSync())
+      token = envToken.get //.getOrElse(Secret.currentToken(secretArn).unsafeRunSync())
       result <- punch(stampType, coop, token.toString)
         .unsafeRunSync()
         .filterOrElse(_.success, "Punch failed")
@@ -64,3 +69,4 @@ object Lambda:
     input.close()
     output.flush()
     output.close()
+}
