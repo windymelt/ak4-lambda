@@ -9,7 +9,7 @@ object CLI:
     .env[UUID](
       "AK4_TOKEN",
       help =
-        "Ak4 API Token. If omitted, token is retrieved from AWS Secret Manager.",
+        "Ak4 API Token.",
       metavar = "xxxxxxxx-yyyy-zzzz-aaaa-bbbbbbbbbbbb"
     )
     .orNone

@@ -4,12 +4,12 @@ import com.github.windymelt.ak4lambda.endpoint.codec.DateTime.{*, given}
 import io.circe.Decoder
 import io.circe.Encoder
 import io.circe.generic.auto._
-import sttp.tapir._
-import sttp.tapir.generic.auto._
-import sttp.tapir.json.circe._
+import sttp.tapir.{*, given}
+import sttp.tapir.generic.auto.{*, given}
+import sttp.tapir.json.circe.{*, given}
 
 object Ak4 {
-  private val authInput: EndpointInput[String] = query[String]("token")
+  private lazy val authInput: EndpointInput[String] = query[String]("token")
   private lazy val base =
     endpoint.securityIn(authInput).in("api" / "cooperation")
 

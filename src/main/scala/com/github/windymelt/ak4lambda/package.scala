@@ -9,23 +9,23 @@ import com.github.windymelt.ak4lambda.endpoint.Ak4.{
   StampOutput,
   StampType
 }
-import org.http4s.ember.client.EmberClientBuilder
-import org.http4s.implicits.*
 import sttp.tapir.DecodeResult
 import sttp.tapir.DecodeResult.Value
-import sttp.tapir.client.http4s.Http4sClientInterpreter
+import sttp.tapir.client.sttp.SttpClientInterpreter
+import sttp.model.Uri
+import sttp.client3.FetchBackend
 
 package object ak4lambda {
   def punch(
       punchType: endpoint.Ak4.StampType,
       coop: String,
       token: String
-  ): IO[Either[ErrorOutput, StampOutput]] =
-    val (punchRequest, parseResponse) =
-      Http4sClientInterpreter[IO]()
+  ): IO[Either[ErrorOutput, StampOutput]] = {
+    val res =
+      SttpClientInterpreter()
         .toSecureRequest(
           endpoint.Ak4.punch,
-          baseUri = Some(uri"https://atnd.ak4.jp/")
+          baseUri = Some(Uri("https://atnd.ak4.jp/"))
         )
         .apply(token)(
           coop,
@@ -36,35 +36,32 @@ package object ak4lambda {
           )
         )
 
-    val clientResource = EmberClientBuilder.default[IO].build
+    val client = FetchBackend()
+    val result = IO.fromFuture(IO(client.send(res))).onError(e => IO(scribe.error(e.getMessage()))).map(_.body)
+    extractDecodeResult(result)
+  }
+  // def renewToken(
+  //     coop: String,
+  //     token: String
+  // ): IO[Either[ErrorOutput, ReissueTokenOutput]] =
+  //   val res =
+  //     SttpClientInterpreter()
+  //       .toSecureRequest(
+  //         endpoint.Ak4.reissueToken,
+  //         baseUri = Some(Uri("https://atnd.ak4.jp/"))
+  //       )
+  //       .apply(token)(
+  //         coop,
+  //         endpoint.Ak4.ReissueTokenInput(token)
+  //       )
 
-    val parsedResult: IO[DecodeResult[Either[ErrorOutput, StampOutput]]] =
-      clientResource.flatMap(_.run(punchRequest)).use(parseResponse)
+  //   val clientResource = Resource.make(IO(FetchBackend()))(_ => IO.unit)
 
-    extractDecodeResult(parsedResult)
+  //   val parsedResult
+  //       : IO[DecodeResult[Either[ErrorOutput, ReissueTokenOutput]]] =
+  //     clientResource.flatMap(_.send(reissueRequest)).use(parseResponse)
 
-  def renewToken(
-      coop: String,
-      token: String
-  ): IO[Either[ErrorOutput, ReissueTokenOutput]] =
-    val (reissueRequest, parseResponse) =
-      Http4sClientInterpreter[IO]()
-        .toSecureRequest(
-          endpoint.Ak4.reissueToken,
-          baseUri = Some(uri"https://atnd.ak4.jp/")
-        )
-        .apply(token)(
-          coop,
-          endpoint.Ak4.ReissueTokenInput(token)
-        )
-
-    val clientResource = EmberClientBuilder.default[IO].build
-
-    val parsedResult
-        : IO[DecodeResult[Either[ErrorOutput, ReissueTokenOutput]]] =
-      clientResource.flatMap(_.run(reissueRequest)).use(parseResponse)
-
-    extractDecodeResult(parsedResult)
+  //   extractDecodeResult(parsedResult)
 
   def extractDecodeResult[A](
       io: IO[DecodeResult[Either[ErrorOutput, A]]]
