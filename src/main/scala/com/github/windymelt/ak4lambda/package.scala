@@ -25,7 +25,7 @@ package object ak4lambda {
       SttpClientInterpreter()
         .toSecureRequest(
           endpoint.Ak4.punch,
-          baseUri = Some(Uri("https://atnd.ak4.jp/"))
+          baseUri = Some(Uri.unsafeParse("https://atnd.ak4.jp/"))
         )
         .apply(token)(
           coop,

@@ -18,106 +18,70 @@ import cats.effect.ExitCode
 import cats.effect.IO
 import com.monovore.decline.Help
 import com.github.windymelt.ak4lambda.endpoint.Ak4.StampType
+import feral.lambda.{*, given}
+import cats.effect.kernel.Resource
+import cats.effect.std.Env
+import com.github.windymelt.ak4lambda.endpoint.Ak4.ErrorOutput
+import com.github.windymelt.ak4lambda.endpoint.Ak4.StampOutput
 
-object Lambda {
-  @js.native
-  trait ButtonClicked extends js.Object {
-    val clickTypeName: String
-  }
+case class ButtonClicked(clickTypeName: String) derives io.circe.Decoder
 
-  given ButtonClickedCodec: Codec[ButtonClicked] = new Codec[ButtonClicked] {
-    def apply(c: HCursor): Decoder.Result[ButtonClicked] =
-      for ctn <- c.downField("clickTypeName").as[String]
-      yield js.Object
-        .fromEntries(
-          js.Array(
-            "clickTypeName" -> ctn
-          )
-        )
-        .asInstanceOf[ButtonClicked]
-    def apply(a: ButtonClicked): Json =
-      Json.obj("clickTypeName" -> Json.fromString(a.clickTypeName))
-  }
-
-  @js.native
-  trait Context extends js.Object {}
-
-  private val logger = scribe.Logger("Lambda")
-
+object handler extends feral.lambda.IOLambda.Simple[ButtonClicked, INothing] {
   private val cmd = Command("ak4", "Punch ak4 system", false)(
     (CLI.tokenEnvOpt, CLI.coopIdOpt).tupled
   )
 
-  // AWS Lambda用エンドポイント
-  @JSExportTopLevel(name = "handler", moduleID = "index")
-  def handler(
-      input: ButtonClicked,
-      context: Context
-  ): Unit = {
-    val env = js.Dynamic.global.process.env.asInstanceOf[js.Dictionary[String]].toMap
-    val settings: Either[Help, (StampType, String, String)] = for
-      (envToken, coop) <- cmd.parse(Seq(), env)
-      clickType = input.clickTypeName
-      stampType = clickType match
-        case "SINGLE" => endpoint.Ak4.StampType.出勤
-        case "DOUBLE" => endpoint.Ak4.StampType.退勤
-        case "LONG"   => endpoint.Ak4.StampType.退勤
-      token = envToken.get
-    yield (stampType, coop, token.toString)
+  case class Init(logger: scribe.Logger, envToken: String, coop: String)
 
-    App(settings).main(Array())
-  }
+  override def init: Resource[IO, Init] = Resource.make {
+    val parseResult: IO[Either[Help, (Option[java.util.UUID], String)]] = for {
+      env <- Env[IO].entries
+    } yield cmd.parse(Seq(), env.toMap)
 
-  private class App(settings: Either[Help, (StampType, String ,String)]) extends IOApp.Simple {
-    def run: IO[Unit] = {
-      val f =
-        punch.tupled.andThen(_.map(_.filterOrElse(_.success, "Punch failed")))
-      val pr = settings.traverse(f)
-      val prf = pr.map {
-        case Left(e) =>
-          logger.error(s"punch failed:")
-          logger.error(e.toString)
-          logger.info("fail")
-        case Right(_) =>
-          logger.info("ok")
+    parseResult.flatMap {
+      case Left(_) =>
+        IO.raiseError(new IllegalArgumentException("envvar parse failed"))
+      case Right((None, _)) =>
+        IO.raiseError(new IllegalArgumentException("invalid UUID"))
+      case Right((Some(uuid), coop)) =>
+        IO(Init(scribe.Logger("handler"), uuid.toString(), coop))
+    }
+  }(_ => IO.unit)
+
+  def apply(
+      event: ButtonClicked,
+      context: Context[IO],
+      init: Init
+  ): IO[Option[INothing]] = {
+    val punchResult: IO[Either[ErrorOutput, StampOutput]] = for {
+      _ <- IO(init.logger.info("handler start"))
+      punchType <- event.clickTypeName match {
+        case "SINGLE" => IO.pure(endpoint.Ak4.StampType.出勤)
+        case "DOUBLE" => IO.pure(endpoint.Ak4.StampType.退勤)
+        case "LONG"   => IO.pure(endpoint.Ak4.StampType.退勤)
       }
+      punchResult <- punch(punchType, init.coop, init.envToken)
+    } yield punchResult
 
-      prf >> IO.pure(ExitCode.Success)
+    punchResult.flatMap {
+      case Left(e) =>
+        for {
+          _ <- IO(init.logger.error("punch failed"))
+          _ <- IO(init.logger.error(e.errors.map(_.message).mkString("\n")))
+        } yield None
+      case Right(out) =>
+        out.success match {
+          case true =>
+            for {
+              _ <- IO(init.logger.info("punch successful"))
+              _ <- IO(init.logger.info(out.response.stampedAt))
+            } yield None
+          case false =>
+            for {
+              _ <- IO(init.logger.error("punch failed"))
+              _ <- IO(init.logger.error(out.errors.mkString("\n")))
+            } yield None
+        }
     }
   }
-
-  // val punchResult = for
-  //   (envToken, coop, secretArn) <- cmd.parse(Seq(), sys.env)
-  //   event <- decode[ButtonClicked](Source.fromInputStream(input).mkString)
-  //   clickType = event.clickTypeName
-  //   stampType = clickType match
-  //     case "SINGLE" => endpoint.Ak4.StampType.出勤
-  //     case "DOUBLE" => endpoint.Ak4.StampType.退勤
-  //     case "LONG"   => endpoint.Ak4.StampType.退勤
-  //   token = envToken.get //.getOrElse(Secret.currentToken(secretArn).unsafeRunSync())
-  //   result <- punch(stampType, coop, token.toString)
-  //     .filterOrElse(_.success, "Punch failed")
-  //   _ = stampType match
-  //     case endpoint.Ak4.StampType.出勤 =>
-  //       output.write("""{"status":"in"}""".getBytes())
-  //       // renew token every morning
-  //       // val newToken =
-  //       //   renewToken(coop, token.toString).unsafeRunSync()
-  //       // newToken.foreach: t =>
-  //       //   Secret
-  //       //     .updateCurrentToken(secretArn, t.response.token)
-  //       //     .unsafeRunSync()
-  //     case endpoint.Ak4.StampType.退勤 =>
-  //       output.write("""{"status":"out"}""".getBytes())
-  //     case _ => // nop
-  // yield result
-  // punchResult match
-  //   case Left(e) =>
-  //     logger.error(s"punch failed:")
-  //     logger.error(e.toString)
-  //     output.write("fail".getBytes())
-  //   case Right(_) => // nop
-  // input.close()
-  // output.flush()
-  // output.close()
 }
