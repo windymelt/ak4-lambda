@@ -74,7 +74,7 @@ package object ak4lambda:
       pr <- io
       v <- pr match
         case Value(either) => IO(either)
-        case otherwise =>
+        case otherwise     =>
           val err = Seq(ErrorResponse("CLIENT_FAILED", "decode failed"))
           IO.println(otherwise) >> Left(ErrorOutput(false, err)).pure
     yield v
