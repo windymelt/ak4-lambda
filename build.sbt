@@ -8,7 +8,7 @@ lazy val root = project
     name := "ak4-lambda",
     version := "0.1.0-SNAPSHOT",
     scalaVersion := scala3Version,
-    libraryDependencies += "org.scalameta" %% "munit" % "0.7.29" % Test,
+    libraryDependencies += "org.scalameta" %% "munit" % "1.3.1" % Test,
     libraryDependencies ++= Seq(
       "com.softwaremill.sttp.tapir" %% "tapir-core" % "1.7.5",
       "com.softwaremill.sttp.tapir" %% "tapir-http4s-client" % "1.4.0",
