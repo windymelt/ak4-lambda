@@ -16,7 +16,7 @@ lazy val root = project
       "org.http4s" %% "http4s-ember-client" % http4sVersion,
       "com.monovore" %% "decline" % "2.4.1",
       "com.monovore" %% "decline-effect" % "2.4.1",
-      "com.github.nscala-time" %% "nscala-time" % "2.32.0",
+      "com.github.nscala-time" %% "nscala-time" % "2.34.0",
       "com.amazonaws" % "aws-lambda-java-core" % "1.2.3",
       "com.amazonaws" % "aws-lambda-java-events" % "3.11.4",
       "com.amazonaws" % "aws-lambda-java-log4j2" % "1.5.1",
